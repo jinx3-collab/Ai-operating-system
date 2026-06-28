@@ -18,7 +18,8 @@ class Memory:
             "When you need to execute something, emit a JSON block like:\n"
             '{"action": "shell", "command": "ls -la"}\n'
             "Available actions: shell, file_read, file_write, file_list, gui_type, gui_click, "
-            "gui_screenshot, code_run, notify. "
+            "gui_screenshot, code_run, browser_open, browser_search, browser_fetch, notify. "
+            "browser_open opens a URL in Chrome. browser_search opens a search. browser_fetch fetches page text silently. "
             "Always explain what you are doing and why."
         )
         if persist and MEMORY_FILE.exists():

@@ -9,6 +9,7 @@ import tools.shell as shell
 import tools.files as files
 import tools.code_runner as code_runner
 import tools.gui as gui
+import tools.browser as browser
 
 
 # JSON action block pattern
@@ -72,6 +73,20 @@ def _dispatch(action: dict, confirmed: bool = False) -> str:
         out = r.get("stdout") or r.get("error", "")
         err = r.get("stderr", "")
         return (out + ("\n[stderr]: " + err if err else "")).strip()
+
+    elif name == "browser_open":
+        r = browser.open_url(action.get("url", ""))
+        return f"opened {action.get('url')}" if r["ok"] else r.get("error", "failed")
+
+    elif name == "browser_search":
+        r = browser.search(action.get("query", ""), action.get("engine", "google"))
+        return f"searching: {action.get('query')}" if r["ok"] else r.get("error", "failed")
+
+    elif name == "browser_fetch":
+        r = browser.fetch(action.get("url", ""))
+        if "error" in r:
+            return r["error"]
+        return r["text"]
 
     elif name == "notify":
         msg = action.get("message", "")
