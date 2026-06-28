@@ -1,6 +1,16 @@
 import os
 from dataclasses import dataclass, field
 from typing import Optional
+from pathlib import Path
+
+# Load .env if present
+_env = Path(__file__).parent / ".env"
+if _env.exists():
+    for line in _env.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, _, v = line.partition("=")
+            os.environ.setdefault(k.strip(), v.strip())
 
 
 @dataclass
@@ -18,7 +28,7 @@ class Config:
 
     # ── Gemini (Google) ───────────────────────────────────
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
-    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
     # ── Colab (ngrok tunnel) ──────────────────────────────
     colab_url: Optional[str] = os.getenv("COLAB_URL")
