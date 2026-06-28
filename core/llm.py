@@ -21,6 +21,8 @@ def chat(messages: list[dict]) -> str:
             return _gpt(messages)
         elif backend == "gemini":
             return _gemini(messages)
+        elif backend in ("nvidia", "minimax", "nim"):
+            return _nvidia(messages)
         elif backend == "colab":
             return _colab(messages)
         else:
@@ -106,6 +108,33 @@ def _gemini(messages: list[dict]) -> str:
     return result["candidates"][0]["content"]["parts"][0]["text"]
 
 
+# ── NVIDIA NIM (MiniMax-M3 multimodal) ───────────────────────────────────────
+
+def _nvidia(messages: list[dict]) -> str:
+    key = cfg.nvidia_api_key
+    if not key:
+        return "[NVIDIA error: NVIDIA_API_KEY not set]"
+
+    payload = {
+        "model": cfg.nvidia_model,
+        "messages": messages,
+        "max_tokens": 8192,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "stream": False,
+    }
+    result = _post(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        payload,
+        {
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+    )
+    return result["choices"][0]["message"]["content"]
+
+
 # ── Colab (ngrok tunnel) ──────────────────────────────────────────────────────
 
 def _colab(messages: list[dict]) -> str:
@@ -146,6 +175,8 @@ def is_backend_available() -> bool:
             return bool(cfg.openai_api_key)
         elif backend == "gemini":
             return bool(cfg.gemini_api_key)
+        elif backend in ("nvidia", "minimax", "nim"):
+            return bool(cfg.nvidia_api_key)
         elif backend == "colab":
             return bool(cfg.colab_url)
         else:
@@ -163,6 +194,8 @@ def list_available_backends() -> list[str]:
         available.append(f"gpt ({cfg.gpt_model})")
     if cfg.gemini_api_key:
         available.append(f"gemini ({cfg.gemini_model})")
+    if cfg.nvidia_api_key:
+        available.append(f"nvidia ({cfg.nvidia_model})")
     if cfg.colab_url:
         available.append("colab")
     available.append(f"ollama ({cfg.ollama_model})")

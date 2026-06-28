@@ -30,6 +30,10 @@ class Config:
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
+    # ── NVIDIA (MiniMax-M3 / NIM) ─────────────────────────
+    nvidia_api_key: Optional[str] = os.getenv("NVIDIA_API_KEY")
+    nvidia_model: str = os.getenv("NVIDIA_MODEL", "minimaxai/minimax-m3")
+
     # ── Colab (ngrok tunnel) ──────────────────────────────
     colab_url: Optional[str] = os.getenv("COLAB_URL")
     colab_api_key: Optional[str] = os.getenv("COLAB_API_KEY")
