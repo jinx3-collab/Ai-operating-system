@@ -66,6 +66,28 @@ async def chat_endpoint(body: dict):
     return {"response": response}
 
 
+@app.post("/api/backend")
+async def set_backend(body: dict):
+    backend = body.get("backend", "claude")
+    cfg.backend = backend
+    return {"backend": cfg.backend, "available": is_backend_available()}
+
+
+@app.post("/api/model")
+async def set_model(body: dict):
+    model = body.get("model", "")
+    backend = cfg.backend.lower()
+    if backend == "claude":
+        cfg.claude_model = model
+    elif backend in ("gpt", "openai"):
+        cfg.gpt_model = model
+    elif backend == "gemini":
+        cfg.gemini_model = model
+    else:
+        cfg.ollama_model = model
+    return {"model": model, "backend": cfg.backend}
+
+
 @app.post("/api/clear")
 async def clear(body: dict = {}):
     session = body.get("session", "default")

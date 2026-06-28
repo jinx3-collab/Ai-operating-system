@@ -2,30 +2,41 @@ import os
 from dataclasses import dataclass, field
 from typing import Optional
 
+
 @dataclass
 class Config:
-    # LLM backend: "ollama" or "colab"
-    backend: str = os.getenv("AI_OS_BACKEND", "ollama")
+    # Active backend: claude | gpt | gemini | colab | ollama
+    backend: str = os.getenv("AI_OS_BACKEND", "claude")
 
-    # Ollama settings
-    ollama_url: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
-    ollama_model: str = os.getenv("OLLAMA_MODEL", "phi3:mini")
+    # ── Claude (Anthropic) ────────────────────────────────
+    anthropic_api_key: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
+    claude_model: str = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
 
-    # Colab settings (set COLAB_URL to your ngrok/colab tunnel URL)
+    # ── GPT (OpenAI) ──────────────────────────────────────
+    openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
+    gpt_model: str = os.getenv("GPT_MODEL", "gpt-4o")
+
+    # ── Gemini (Google) ───────────────────────────────────
+    gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
+    # ── Colab (ngrok tunnel) ──────────────────────────────
     colab_url: Optional[str] = os.getenv("COLAB_URL")
     colab_api_key: Optional[str] = os.getenv("COLAB_API_KEY")
 
-    # Web dashboard
+    # ── Ollama (local fallback) ───────────────────────────
+    ollama_url: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    ollama_model: str = os.getenv("OLLAMA_MODEL", "phi3:mini")
+
+    # ── Web dashboard ─────────────────────────────────────
     web_host: str = os.getenv("AI_OS_HOST", "0.0.0.0")
     web_port: int = int(os.getenv("AI_OS_PORT", "7860"))
 
-    # Safety: commands that require user confirmation
+    # ── Safety ────────────────────────────────────────────
     dangerous_patterns: list = field(default_factory=lambda: [
-        "rm -rf", "mkfs", "dd if=", ":(){ :|:& };:", "shutdown", "reboot",
-        "format", "fdisk", "> /dev/"
+        "rm -rf /", "mkfs", "dd if=", ":(){ :|:& };:", "shutdown", "reboot",
+        "format c:", "fdisk", "> /dev/sd"
     ])
-
-    # Max shell command timeout in seconds
     shell_timeout: int = int(os.getenv("SHELL_TIMEOUT", "30"))
 
 
