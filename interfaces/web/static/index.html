@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Operating System</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --warn: #f78166;
+    --yellow: #e3b341;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+
+  /* Header */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 600; color: var(--accent); }
+  .badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  .badge-green { background: #1a3a1a; color: var(--accent2); border: 1px solid #2ea04340; }
+  .badge-red { background: #3a1a1a; color: var(--warn); border: 1px solid #f7816640; }
+  .badge-blue { background: #1a2a3a; color: var(--accent); border: 1px solid #58a6ff40; }
+  .spacer { flex: 1; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); display: inline-block; }
+  .status-dot.online { background: var(--accent2); }
+  #backend-label { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* Layout */
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* Sidebar */
+  aside {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 0;
+  }
+  .sidebar-section { padding: 0 16px 16px; }
+  .sidebar-section h2 { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text);
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .sidebar-btn:hover { background: var(--surface2); }
+  .sidebar-btn .icon { font-size: 1rem; width: 20px; text-align: center; }
+  .model-selector { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 6px 8px; font-size: 0.8rem; margin-top: 4px; }
+
+  /* Main chat area */
+  main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .msg { display: flex; gap: 12px; max-width: 860px; width: 100%; }
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+  .msg.assistant { align-self: flex-start; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; flex-shrink: 0; font-weight: 700;
+  }
+  .avatar.user-av { background: #1f3a5c; color: var(--accent); }
+  .avatar.ai-av { background: #1a3a1a; color: var(--accent2); }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: calc(100% - 44px);
+    word-break: break-word;
+  }
+  .msg.user .bubble { background: #1f3a5c; border: 1px solid #58a6ff30; border-radius: 12px 2px 12px 12px; }
+  .msg.assistant .bubble { background: var(--surface2); border: 1px solid var(--border); border-radius: 2px 12px 12px 12px; }
+
+  pre { background: #0d1117; padding: 10px 14px; border-radius: 6px; overflow-x: auto; margin: 8px 0; border: 1px solid var(--border); }
+  code { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.83rem; }
+  .bubble code:not(pre code) { background: #0d1117; padding: 2px 5px; border-radius: 4px; font-size: 0.83rem; }
+
+  .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .typing span { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  /* Input area */
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    background: var(--surface);
+  }
+  .input-row { display: flex; gap: 10px; align-items: flex-end; }
+  #chat-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    resize: none;
+    min-height: 44px;
+    max-height: 200px;
+    line-height: 1.5;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  #chat-input:focus { outline: none; border-color: var(--accent); }
+  #chat-input::placeholder { color: var(--text-muted); }
+  .send-btn {
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn:disabled { opacity: 0.4; cursor: default; }
+  .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
+  /* Confirmation bar */
+  #confirm-bar {
+    display: none;
+    background: #3a2a0a;
+    border: 1px solid var(--yellow);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    margin-bottom: 10px;
+    font-size: 0.875rem;
+    color: var(--yellow);
+    align-items: center;
+    gap: 12px;
+  }
+  #confirm-bar.visible { display: flex; }
+  .confirm-btn { background: var(--accent2); color: #0d1117; border: none; border-radius: 6px; padding: 4px 14px; font-weight: 600; cursor: pointer; }
+  .cancel-btn { background: var(--warn); color: #0d1117; border: none; border-radius: 6px; padding: 4px 14px; font-weight: 600; cursor: pointer; }
+
+  /* Tool output */
+  .tool-tag { display: inline-block; font-size: 0.7rem; background: #1a2a1a; color: var(--accent2); border: 1px solid #3fb95030; border-radius: 4px; padding: 1px 6px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.3rem">🤖</span>
+  <h1>AI Operating System</h1>
+  <span class="badge badge-blue" id="model-badge">phi3:mini</span>
+  <span class="badge badge-blue" id="backend-badge">OLLAMA</span>
+  <div style="display:flex;align-items:center;gap:6px">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="backend-label">Checking...</span>
+  </div>
+  <div class="spacer"></div>
+  <span style="font-size:0.8rem;color:var(--text-muted)">jinx3-collab / Ai-operating-system</span>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="sidebar-section">
+      <h2>Quick Actions</h2>
+      <button class="sidebar-btn" onclick="quickSend('list files in my home directory')"><span class="icon">📁</span> List Files</button>
+      <button class="sidebar-btn" onclick="quickSend('show running processes and CPU usage')"><span class="icon">📊</span> System Stats</button>
+      <button class="sidebar-btn" onclick="quickSend('take a screenshot')"><span class="icon">📸</span> Screenshot</button>
+      <button class="sidebar-btn" onclick="quickSend('what is my current directory and username?')"><span class="icon">🖥️</span> System Info</button>
+      <button class="sidebar-btn" onclick="quickSend('show disk usage')"><span class="icon">💾</span> Disk Usage</button>
+      <button class="sidebar-btn" onclick="quickSend('list all network interfaces and IP addresses')"><span class="icon">🌐</span> Network</button>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Model</h2>
+      <select class="model-selector" id="model-select" onchange="switchModel(this.value)">
+        <option value="phi3:mini">phi3:mini (fastest)</option>
+        <option value="llama3.2:1b">llama3.2:1b</option>
+        <option value="llama3.2:3b">llama3.2:3b</option>
+        <option value="gemma2:2b">gemma2:2b</option>
+        <option value="mistral:7b">mistral:7b</option>
+        <option value="colab">☁️ Use Colab</option>
+      </select>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Session</h2>
+      <button class="sidebar-btn" onclick="clearMemory()"><span class="icon">🗑️</span> Clear Memory</button>
+      <button class="sidebar-btn" onclick="showHelp()"><span class="icon">❓</span> Help</button>
+    </div>
+  </aside>
+
+  <main>
+    <div id="messages">
+      <div class="msg assistant">
+        <div class="avatar ai-av">AI</div>
+        <div class="bubble">
+          <strong>AI Operating System online.</strong><br>
+          I can control your entire computer — run shell commands, manage files, automate the GUI, and write &amp; execute code.<br><br>
+          Try: <em>"list my files"</em>, <em>"write a Python script that monitors CPU"</em>, or <em>"open the browser"</em>.
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div id="confirm-bar">
+        ⚠️ <span id="confirm-msg">Dangerous command detected. Confirm?</span>
+        <button class="confirm-btn" onclick="sendConfirm(true)">Yes, run it</button>
+        <button class="cancel-btn" onclick="sendConfirm(false)">Cancel</button>
+      </div>
+      <div class="input-row">
+        <textarea id="chat-input" placeholder="Ask anything or give a task... (Shift+Enter for newline)" rows="1"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">Send ↑</button>
+      </div>
+      <div class="hint">AI-OS can run commands on your machine. Review before confirming dangerous operations.</div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SESSION = 'user-' + Math.random().toString(36).slice(2);
+let ws = null;
+let waiting = false;
+let needsConfirm = false;
+
+// WebSocket connection
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/${SESSION}`);
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'status') {
+      updateTyping(msg.text);
+    } else if (msg.type === 'response') {
+      removeTyping();
+      appendMsg('assistant', msg.text);
+      waiting = false;
+      document.getElementById('send-btn').disabled = false;
+      checkForConfirm(msg.text);
+    } else if (msg.type === 'error') {
+      removeTyping();
+      appendMsg('assistant', '⚠️ Error: ' + msg.text);
+      waiting = false;
+      document.getElementById('send-btn').disabled = false;
+    }
+  };
+  ws.onclose = () => { setTimeout(connect, 2000); };
+  ws.onerror = () => { ws.close(); };
+}
+
+function checkForConfirm(text) {
+  if (text.includes('Confirmation required') || text.includes('CONFIRM_NEEDED')) {
+    needsConfirm = true;
+    document.getElementById('confirm-bar').classList.add('visible');
+    document.getElementById('confirm-msg').textContent = 'Dangerous command detected — confirm to proceed.';
+  }
+}
+
+function sendConfirm(yes) {
+  needsConfirm = false;
+  document.getElementById('confirm-bar').classList.remove('visible');
+  if (yes) {
+    wsSend({ action: 'chat', message: 'yes', confirmed: true });
+    appendMsg('user', '✅ Confirmed — proceed.');
+    showTyping();
+  } else {
+    wsSend({ action: 'chat', message: 'no' });
+    appendMsg('user', '❌ Cancelled.');
+  }
+}
+
+function wsSend(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(obj));
+  }
+}
+
+async function sendMessage() {
+  if (waiting) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  appendMsg('user', text);
+  showTyping();
+  waiting = true;
+  document.getElementById('send-btn').disabled = true;
+
+  wsSend({ action: 'chat', message: text });
+}
+
+function quickSend(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = 'msg assistant';
+  el.id = 'typing-indicator';
+  el.innerHTML = '<div class="avatar ai-av">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function updateTyping(text) {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.querySelector('.bubble').textContent = text;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function appendMsg(role, text) {
+  const msgs = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = `msg ${role}`;
+  const av = role === 'user'
+    ? '<div class="avatar user-av">You</div>'
+    : '<div class="avatar ai-av">AI</div>';
+  el.innerHTML = `${av}<div class="bubble">${renderMarkdown(text)}</div>`;
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderMarkdown(text) {
+  // Simple markdown: code blocks, inline code, bold, newlines
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```(\w+)?\n?([\s\S]*?)```/g, (_,lang,code) =>
+      `<pre><code>${code.trim()}</code></pre>`)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+async function clearMemory() {
+  await fetch('/api/clear', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:SESSION})});
+  document.getElementById('messages').innerHTML = '';
+  appendMsg('assistant', 'Memory cleared. Starting fresh!');
+}
+
+function showHelp() {
+  appendMsg('assistant',
+    '**AI-OS Capabilities**\n\n' +
+    '- **Shell commands** — run any terminal command\n' +
+    '- **File management** — read, write, list, search files\n' +
+    '- **GUI automation** — type, click, screenshot (requires xdotool/scrot)\n' +
+    '- **Code execution** — write and run Python, Bash, JS\n\n' +
+    '**Quick examples:**\n' +
+    '- "list all PDF files in my Downloads"\n' +
+    '- "write and run a Python script that shows system info"\n' +
+    '- "open Firefox"\n' +
+    '- "create a folder called projects on my desktop"\n'
+  );
+}
+
+function switchModel(val) {
+  if (val === 'colab') {
+    const url = prompt('Enter your Colab/ngrok URL (e.g. https://xxxx.ngrok.io):');
+    if (url) {
+      fetch('/api/config', {method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({backend:'colab',colab_url:url})});
+      appendMsg('assistant', `Switched to Colab backend: \`${url}\``);
+    }
+  } else {
+    fetch('/api/config', {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({backend:'ollama',model:val})});
+    appendMsg('assistant', `Switched model to \`${val}\``);
+  }
+}
+
+// Check backend status
+async function checkStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const dot = document.getElementById('status-dot');
+    const label = document.getElementById('backend-label');
+    document.getElementById('model-badge').textContent = d.model;
+    document.getElementById('backend-badge').textContent = d.backend.toUpperCase();
+    if (d.available) {
+      dot.classList.add('online');
+      label.textContent = `${d.backend} online`;
+    } else {
+      dot.classList.remove('online');
+      label.textContent = `${d.backend} offline`;
+    }
+  } catch(e) {}
+}
+
+// Auto-grow textarea
+document.getElementById('chat-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+});
+
+// Keyboard: Enter sends, Shift+Enter is newline
+document.getElementById('chat-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+connect();
+checkStatus();
+setInterval(checkStatus, 10000);
+</script>
+</body>
+</html>
